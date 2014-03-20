@@ -27,4 +27,3 @@ mqtt {
 	installer: bash;
 	exports: ip;
 }
-

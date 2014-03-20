@@ -19,20 +19,10 @@ package net.roboconf.debug.sample;
 import java.io.File;
 import java.io.IOException;
 
-import net.roboconf.core.actions.ApplicationAction;
-import net.roboconf.core.model.helpers.ComponentHelpers;
-import net.roboconf.core.model.runtime.Component;
-import net.roboconf.dm.management.ManagedApplication;
 import net.roboconf.dm.management.Manager;
 import net.roboconf.dm.management.exceptions.AlreadyExistingException;
-import net.roboconf.dm.management.exceptions.BulkActionException;
-import net.roboconf.dm.management.exceptions.InexistingException;
-import net.roboconf.dm.management.exceptions.InvalidActionException;
 import net.roboconf.dm.management.exceptions.InvalidApplicationException;
-import net.roboconf.dm.management.exceptions.UnauthorizedActionException;
 import net.roboconf.dm.rest.client.test.RestTestUtils;
-import net.roboconf.plugin.api.ExecutionLevel;
-import net.roboconf.testing.InMemoryIaasResolver;
 
 import org.junit.Test;
 
@@ -70,15 +60,11 @@ public class DebugSample extends JerseyTest {
 	public void loadApplication() {
 
 		// Initialize the DM
-		Manager.INSTANCE.tryToChangeMessageServerIp( "127.0.0.1" );
-
-		// Load the application
-		ManagedApplication ma = null;
+		Manager.INSTANCE.tryToChangeMessageServerIp( "localhost" );
 
 		// Change the directory location for your own project
-		File applicationFilesDirectory = new File( "./sample" );
 		try {
-			ma = Manager.INSTANCE.loadNewApplication( applicationFilesDirectory );
+			Manager.INSTANCE.loadNewApplication( new File( "/home/vincent/git/roboconf-deployment/linagora-rse" ));
 
 		} catch( AlreadyExistingException e ) {
 			e.printStackTrace();
@@ -87,50 +73,6 @@ public class DebugSample extends JerseyTest {
 			e.printStackTrace();
 
 		} catch( IOException e ) {
-			e.printStackTrace();
-
-		} finally {
-			if( ma == null )
-				return;
-		}
-
-		// Patch the application to run partially and thus debug it on this machine
-		InMemoryIaasResolver testResolver = new InMemoryIaasResolver();
-		testResolver.setExecutionLevel( ExecutionLevel.LOG );
-		Manager.INSTANCE.setIaasResolver( testResolver );
-
-		// We can even change the plug-ins
-		for( Component c : ComponentHelpers.findAllComponents( ma.getApplication()))
-			c.setInstallerName( "logger" );
-
-		// Run administration actions through the DM...
-		try {
-			// Deploy everything
-			Manager.INSTANCE.perform(
-					ma.getApplication().getName(),
-					ApplicationAction.deploy.toString(),
-					null,
-					true );
-
-			// Start everything
-			Manager.INSTANCE.perform(
-					ma.getApplication().getName(),
-					ApplicationAction.start.toString(),
-					null,
-					true );
-
-			// Perform other actions with Roboconf's web administration
-
-		} catch( InexistingException e ) {
-			e.printStackTrace();
-
-		} catch( InvalidActionException e ) {
-			e.printStackTrace();
-
-		} catch( UnauthorizedActionException e ) {
-			e.printStackTrace();
-
-		} catch( BulkActionException e ) {
 			e.printStackTrace();
 		}
 	}

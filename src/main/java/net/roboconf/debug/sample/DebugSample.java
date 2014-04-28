@@ -53,18 +53,17 @@ public class DebugSample extends JerseyTest {
 
 		loadApplication();
 		for( ;; ) {
-
+			// nothing
 		}
 	}
 
 	public void loadApplication() {
 
-		// Initialize the DM
-		Manager.INSTANCE.tryToChangeMessageServerIp( "localhost" );
-
 		// Change the directory location for your own project
 		try {
-			Manager.INSTANCE.loadNewApplication( new File( "/home/vincent/git/roboconf-deployment/linagora-rse" ));
+			Manager.INSTANCE.tryToChangeMessageServerIp( "localhost" );
+			Manager.INSTANCE.loadNewApplication( new File( "D:/Workspaces/WkRoboconfGit/roboconf/roboconf-core/src/test/resources/applications/valid/karaf-joram-jndi" ));
+			// Manager.INSTANCE.loadNewApplication( new File( "/home/vincent/git/roboconf-deployment/linagora-rse" ));
 
 		} catch( AlreadyExistingException e ) {
 			e.printStackTrace();

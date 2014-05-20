@@ -70,10 +70,12 @@ public class DebugSample extends JerseyTest {
 	public void loadApplication() {
 
 		// Change the logger settings
+		Level defaultLevel = Level.FINEST;
+
 		Logger logger = Logger.getLogger( "" );
-		logger.setLevel( Level.FINEST );
+		logger.setLevel( defaultLevel );
 		for( Handler logHandler : logger.getHandlers())
-			logHandler.setLevel( Level.FINEST );
+			logHandler.setLevel( defaultLevel );
 
 
 		// Change the directory location for your own project

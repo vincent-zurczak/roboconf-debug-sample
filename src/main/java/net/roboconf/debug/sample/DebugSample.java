@@ -17,11 +17,14 @@
 package net.roboconf.debug.sample;
 
 import java.io.File;
+import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import net.roboconf.core.actions.ApplicationAction;
+import net.roboconf.core.logging.RoboconfLogFormatter;
 import net.roboconf.core.model.helpers.ComponentHelpers;
 import net.roboconf.core.model.helpers.InstanceHelpers;
 import net.roboconf.core.model.runtime.Component;
@@ -71,11 +74,27 @@ public class DebugSample extends JerseyTest {
 
 		// Change the logger settings
 		Level defaultLevel = Level.FINEST;
+		Filter logFilter = new Filter() {
+			@Override
+			public boolean isLoggable( LogRecord record ) {
+				return record.getLoggerName().startsWith( "net.roboconf" );
+			}
+		};
 
 		Logger logger = Logger.getLogger( "" );
 		logger.setLevel( defaultLevel );
-		for( Handler logHandler : logger.getHandlers())
+		logger.setFilter( logFilter );
+
+		for( Handler logHandler : logger.getHandlers()) {
 			logHandler.setLevel( defaultLevel );
+			logHandler.setFilter( logFilter );
+			logHandler.setFormatter( new RoboconfLogFormatter() {
+				@Override
+				public String format( LogRecord record ) {
+					return super.format( record ) + "\n";
+				}
+			});
+		}
 
 
 		// Change the directory location for your own project

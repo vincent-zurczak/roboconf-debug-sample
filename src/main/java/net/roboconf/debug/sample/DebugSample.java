@@ -17,9 +17,15 @@
 package net.roboconf.debug.sample;
 
 import java.io.File;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import net.roboconf.core.actions.ApplicationAction;
+import net.roboconf.core.model.helpers.ComponentHelpers;
 import net.roboconf.core.model.helpers.InstanceHelpers;
+import net.roboconf.core.model.runtime.Component;
+import net.roboconf.core.model.runtime.Graphs;
 import net.roboconf.core.model.runtime.Instance;
 import net.roboconf.dm.environment.iaas.IaasResolver;
 import net.roboconf.dm.management.ManagedApplication;
@@ -63,6 +69,13 @@ public class DebugSample extends JerseyTest {
 
 	public void loadApplication() {
 
+		// Change the logger settings
+		Logger logger = Logger.getLogger( "" );
+		logger.setLevel( Level.FINEST );
+		for( Handler logHandler : logger.getHandlers())
+			logHandler.setLevel( Level.FINEST );
+
+
 		// Change the directory location for your own project
 		try {
 			Manager.INSTANCE.tryToChangeMessageServerIp( "localhost" );
@@ -89,6 +102,21 @@ public class DebugSample extends JerseyTest {
 						ApplicationAction.deploy.toString(),
 						InstanceHelpers.computeInstancePath( instance ),
 						false );
+			}
+
+			// Add fake children instances
+			Component warComponent = new Component( "war" ).installerName( "bash" ).alias( "war" );
+			Graphs graphs = ma.getApplication().getGraphs();
+			Component tomcatComponent = ComponentHelpers.findComponent( graphs, "Tomcat" );
+			ComponentHelpers.insertChild( tomcatComponent, warComponent );
+
+			Instance tomcatInstance = InstanceHelpers.findInstanceByPath( ma.getApplication(), "/Tomcat VM 1/Tomcat" );
+			Instance war1 = new Instance( "Hello World!" ).component( warComponent );
+			InstanceHelpers.insertChild( tomcatInstance, war1 );
+
+			for( int i=0; i<45; i++ ) {
+				Instance war2 = new Instance( "ECOM-" + i ).component( warComponent );
+				InstanceHelpers.insertChild( tomcatInstance, war2 );
 			}
 
 		} catch( Exception e ) {

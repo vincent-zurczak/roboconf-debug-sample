@@ -37,7 +37,6 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<scope>test</scope>
 		</dependency>
 		
 		<dependency>
@@ -49,6 +48,12 @@
 		<dependency>
   			<groupId>net.roboconf</groupId>
   			<artifactId>roboconf-dm</artifactId>
+  			<version>1.0-SNAPSHOT</version>
+		</dependency>
+		
+		<dependency>
+  			<groupId>net.roboconf</groupId>
+  			<artifactId>roboconf-dm-rest-api</artifactId>
   			<version>1.0-SNAPSHOT</version>
 		</dependency>
 		
@@ -92,21 +97,18 @@
 			<groupId>com.sun.jersey.jersey-test-framework</groupId>
 			<artifactId>jersey-test-framework-grizzly2</artifactId>
 			<version>${jersey.stack.version}</version>
-			<scope>test</scope>
 		</dependency>
 		
 		<dependency>
 			<groupId>com.sun.jersey</groupId>
 			<artifactId>jersey-servlet</artifactId>
 			<version>${jersey.stack.version}</version>
-			<scope>test</scope>
 		</dependency>
 		
 		<dependency>
 			<groupId>com.sun.jersey.jersey-test-framework</groupId>
 			<artifactId>jersey-test-framework-core</artifactId>
 			<version>${jersey.stack.version}</version>
-			<scope>test</scope>
 		</dependency>
 		
 		<dependency>
@@ -114,7 +116,13 @@
   			<artifactId>roboconf-core</artifactId>
   			<version>1.0-SNAPSHOT</version>
 			<type>test-jar</type>
-			<scope>test</scope>
+		</dependency>
+		
+		<dependency>
+  			<groupId>net.roboconf</groupId>
+  			<artifactId>roboconf-dm-rest-client</artifactId>
+  			<version>1.0-SNAPSHOT</version>
+  			<type>test-jar</type>
 		</dependency>
 	</dependencies>
 	

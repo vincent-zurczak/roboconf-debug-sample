@@ -23,16 +23,13 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import net.roboconf.core.actions.ApplicationAction;
 import net.roboconf.core.logging.RoboconfLogFormatter;
-import net.roboconf.core.model.helpers.ComponentHelpers;
 import net.roboconf.core.model.helpers.InstanceHelpers;
-import net.roboconf.core.model.runtime.Component;
-import net.roboconf.core.model.runtime.Graphs;
 import net.roboconf.core.model.runtime.Instance;
 import net.roboconf.dm.environment.iaas.IaasResolver;
 import net.roboconf.dm.management.ManagedApplication;
 import net.roboconf.dm.management.Manager;
+import net.roboconf.dm.management.ManagerConfiguration;
 import net.roboconf.dm.rest.client.test.RestTestUtils;
 import net.roboconf.iaas.api.IaasException;
 import net.roboconf.iaas.api.IaasInterface;
@@ -64,16 +61,27 @@ public class DebugSample extends JerseyTest {
 	@Test
 	public void testApplications() throws Exception {
 
-		loadApplication();
+		try {
+			loadApplication();
+
+		} catch( Exception e ) {
+			e.printStackTrace();
+		}
+
 		for( ;; ) {
-			// nothing
+			Thread.sleep( 60000 );
 		}
 	}
 
-	public void loadApplication() {
+
+	/**
+	 * Initializes and loads an application.
+	 * @throws Exception
+	 */
+	public void loadApplication() throws Exception {
 
 		// Change the logger settings
-		Level defaultLevel = Level.FINEST;
+		Level defaultLevel = Level.INFO;
 		Filter logFilter = new Filter() {
 			@Override
 			public boolean isLoggable( LogRecord record ) {
@@ -91,57 +99,47 @@ public class DebugSample extends JerseyTest {
 			logHandler.setFormatter( new RoboconfLogFormatter() {
 				@Override
 				public String format( LogRecord record ) {
-					return super.format( record ) + "\n";
+					return "\n" + super.format( record );
 				}
 			});
 		}
 
 
-		// Change the directory location for your own project
-		try {
-			Manager.INSTANCE.tryToChangeMessageServerIp( "localhost" );
-			ManagedApplication ma = Manager.INSTANCE.loadNewApplication( new File( "D:/lamp-legacy-1" ));
+		// Create default settings
+		File temporaryDirectory = new File( System.getProperty( "java.io.tmpdir" ), "roboconf_config" );
+		ManagerConfiguration conf = ManagerConfiguration.createConfiguration( temporaryDirectory, "RabbitMQ's IP", "RabbitMQ's user name", "RabbitMQ's password" );
 
-			// Use in-memory agents
-			Manager.INSTANCE.setIaasResolver( new IaasResolver() {
-				@Override
-				public IaasInterface findIaasInterface( ManagedApplication ma, Instance instance ) throws IaasException {
-					return super.findIaasHandler( IaasResolver.IAAS_IN_MEMORY );
-				}
-			});
+		// Or, if you use a local installation of RabbitMQ
+		// conf = ManagerConfiguration.createConfiguration( temporaryDirectory );
 
-			// All the sub-instances will use the logger plug-in
-			for( Instance instance : InstanceHelpers.getAllInstances( ma.getApplication())) {
-				if( instance.getParent() != null )
-					instance.getComponent().setInstallerName( "logger" );
+		// Or if you static installation (in the user's directory...
+		// ... or if you have set the ROBOCONF_DM_DIR envrionment variable)
+		// File configurationDirectory = ManagerConfiguration.findConfigurationDirectory();
+		// conf = ManagerConfiguration.loadConfiguration( configurationDirectory );
+
+		// Initialize the DM.
+		Manager.INSTANCE.initialize( conf );
+
+		// Use in-memory agents.
+		// This is just an example of model manipulation.
+		Manager.INSTANCE.setIaasResolver( new IaasResolver() {
+			@Override
+			public IaasInterface findIaasInterface( ManagedApplication ma, Instance instance ) throws IaasException {
+				return super.findIaasHandler( IaasResolver.IAAS_IN_MEMORY );
 			}
+		});
 
-			// Deploy everything automatically
-			for( Instance instance : InstanceHelpers.getAllInstances( ma.getApplication())) {
-				Manager.INSTANCE.perform(
-						ma.getApplication().getName(),
-						ApplicationAction.deploy.toString(),
-						InstanceHelpers.computeInstancePath( instance ),
-						false );
-			}
+		// Load an application
+		ManagedApplication ma = Manager.INSTANCE.loadNewApplication( new File( "D:/lamp-legacy-1" ));
 
-			// Add fake children instances
-			Component warComponent = new Component( "war" ).installerName( "bash" ).alias( "war" );
-			Graphs graphs = ma.getApplication().getGraphs();
-			Component tomcatComponent = ComponentHelpers.findComponent( graphs, "Tomcat" );
-			ComponentHelpers.insertChild( tomcatComponent, warComponent );
-
-			Instance tomcatInstance = InstanceHelpers.findInstanceByPath( ma.getApplication(), "/Tomcat VM 1/Tomcat" );
-			Instance war1 = new Instance( "Hello World!" ).component( warComponent );
-			InstanceHelpers.insertChild( tomcatInstance, war1 );
-
-			for( int i=0; i<45; i++ ) {
-				Instance war2 = new Instance( "ECOM-" + i ).component( warComponent );
-				InstanceHelpers.insertChild( tomcatInstance, war2 );
-			}
-
-		} catch( Exception e ) {
-			e.printStackTrace();
+		// All the sub-instances will use the logger plug-in.
+		// Another example of model manipulation.
+		for( Instance instance : InstanceHelpers.getAllInstances( ma.getApplication())) {
+			if( instance.getParent() != null )
+				instance.getComponent().setInstallerName( "logger" );
 		}
+
+		// Deploy and start everything
+		Manager.INSTANCE.deployAndStartAll( ma, null );
 	}
 }

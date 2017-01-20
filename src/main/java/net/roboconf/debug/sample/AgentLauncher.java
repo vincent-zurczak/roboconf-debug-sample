@@ -35,8 +35,8 @@ import net.roboconf.agent.internal.Agent;
  */
 public class AgentLauncher {
 
-	private static final String APP_NAME = "lamp-without-war";
-	private static final String ROOT_INSTANCE_NAME = "MySQL VM";
+	private static final String APP_NAME = "mongo-replicaset";
+	private static final String ROOT_INSTANCE_NAME = "Mongo primary";
 
 	private Agent agent;
 
@@ -76,9 +76,10 @@ public class AgentLauncher {
 		this.agent.setMessageServerPassword( "guest" );
 		this.agent.setIpAddress( "127.0.0.1" );
 		this.agent.setApplicationName( APP_NAME );
-		this.agent.setRootInstanceName( ROOT_INSTANCE_NAME );
+		this.agent.setScopedInstancePath( "/" + ROOT_INSTANCE_NAME );
 		this.agent.setTargetId( "no user data" );
-		this.agent.setSimulatePlugins( true );
+		this.agent.setSimulatePlugins( false );
+
 		this.agent.start();
 	}
 

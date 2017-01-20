@@ -25,21 +25,22 @@
 
 package net.roboconf.debug.sample;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.logging.Level;
 
 import javax.ws.rs.core.UriBuilder;
 
-import net.roboconf.dm.internal.test.TestTargetResolver;
-import net.roboconf.dm.management.Manager;
-import net.roboconf.dm.rest.services.internal.RestApplication;
-
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.rules.TemporaryFolder;
 
 import com.sun.jersey.api.container.grizzly2.GrizzlyServerFactory;
+
+import net.roboconf.dm.internal.test.TestTargetResolver;
+import net.roboconf.dm.management.Manager;
+import net.roboconf.dm.rest.services.internal.RestApplication;
+import net.roboconf.messaging.api.MessagingConstants;
+import net.roboconf.messaging.api.internal.client.test.TestClientFactory;
 
 /**
  * @author Vincent Zurczak - Linagora
@@ -47,7 +48,7 @@ import com.sun.jersey.api.container.grizzly2.GrizzlyServerFactory;
 public class ManagerLauncher {
 
 	private static final String REST_URI = "http://localhost:8090";
-	private static final String APP_LOCATION = "/home/vzurczak/workspaces/roboconf/roboconf-in-memory-lamp/apache-tomcat-mysql";
+	private static final String APP_LOCATION = "/home/vzurczak/workspaces/roboconf/roboconf-examples/mongo-replicaset/target/mongo-replicaset-0.2-SNAPSHOT";
 
 	private final TemporaryFolder folder = new TemporaryFolder();
 	private Manager manager;
@@ -85,18 +86,22 @@ public class ManagerLauncher {
 	 */
 	private void initialize() throws Exception {
 
-		DebugUtils.updateLoggingConfiguration( Level.FINER );
+		DebugUtils.updateLoggingConfiguration( Level.FINE );
 		this.folder.create();
 
+		// Configure the DM
 		this.manager = new Manager();
-		this.manager.setConfigurationDirectoryLocation( this.folder.newFolder().getAbsolutePath());
-		this.manager.setMessageServerIp( "localhost" );
-		this.manager.setMessageServerUsername( "guest" );
-		this.manager.setMessageServerPassword( "guest" );
 		this.manager.setTargetResolver( new TestTargetResolver());
-
+		this.manager.configurationMngr().setWorkingDirectory( this.folder.newFolder());
+		this.manager.setMessagingType( MessagingConstants.FACTORY_TEST );
 		this.manager.start();
-		this.manager.loadNewApplication( new File( APP_LOCATION ));
+
+		// Reconfigure
+		this.manager.addMessagingFactory( new TestClientFactory());
+		this.manager.reconfigure();
+
+		// this.manager.targetAppears( new Ec2IaasHandler());
+		//this.manager.loadNewApplication( new File( APP_LOCATION ));
 
 		URI uri = UriBuilder.fromUri( REST_URI ).build();
 		RestApplication restApp = new RestApplication( this.manager );

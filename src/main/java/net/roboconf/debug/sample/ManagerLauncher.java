@@ -26,19 +26,14 @@
 package net.roboconf.debug.sample;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.logging.Level;
 
-import javax.ws.rs.core.UriBuilder;
-
-import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.rules.TemporaryFolder;
 
-import com.sun.jersey.api.container.grizzly2.GrizzlyServerFactory;
-
+import net.roboconf.debug.sample.DebugUtils.HttpServiceImpl;
 import net.roboconf.dm.internal.test.TestTargetResolver;
 import net.roboconf.dm.management.Manager;
-import net.roboconf.dm.rest.services.internal.RestApplication;
+import net.roboconf.dm.rest.services.internal.ServletRegistrationComponent;
 import net.roboconf.messaging.api.MessagingConstants;
 import net.roboconf.messaging.api.internal.client.test.TestClientFactory;
 
@@ -52,7 +47,8 @@ public class ManagerLauncher {
 
 	private final TemporaryFolder folder = new TemporaryFolder();
 	private Manager manager;
-	private HttpServer httpServer;
+	private HttpServiceImpl httpService;
+	private ServletRegistrationComponent reg;
 
 
 	/**
@@ -75,7 +71,12 @@ public class ManagerLauncher {
 			e.printStackTrace();
 
 		} finally {
-			launcher.clean();
+			try {
+				launcher.clean();
+
+			} catch( Exception e ) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -86,6 +87,10 @@ public class ManagerLauncher {
 	 */
 	private void initialize() throws Exception {
 
+		// Create the HTTP service
+		this.httpService = new DebugUtils.HttpServiceImpl( 9023 );
+
+		// Prepare the logging configuration
 		DebugUtils.updateLoggingConfiguration( Level.FINE );
 		this.folder.create();
 
@@ -100,25 +105,30 @@ public class ManagerLauncher {
 		this.manager.addMessagingFactory( new TestClientFactory());
 		this.manager.reconfigure();
 
-		// this.manager.targetAppears( new Ec2IaasHandler());
-		//this.manager.loadNewApplication( new File( APP_LOCATION ));
+		// Prepare the registration component
+		ServletRegistrationComponent reg = new ServletRegistrationComponent();
+		reg.setManager( this.manager );
+		reg.setHttpService( this.httpService );
 
-		URI uri = UriBuilder.fromUri( REST_URI ).build();
-		RestApplication restApp = new RestApplication( this.manager );
-		this.httpServer = GrizzlyServerFactory.createHttpServer( uri, restApp );
+		// Enable CORS
+		reg.setEnableCors( true );
+
+		// Start the server only once the servlets were registered
+		reg.starting();
+		this.httpService.getServer().start();
 	}
 
 
 	/**
 	 * Clean all the resources.
 	 */
-	private void clean() {
+	private void clean() throws Exception {
 
+		this.reg.stopping();
 		if( this.manager != null )
 			this.manager.stop();
 
+		this.httpService.getServer().stop();
 		this.folder.delete();
-		if( this.httpServer != null )
-			this.httpServer.stop();
 	}
 }

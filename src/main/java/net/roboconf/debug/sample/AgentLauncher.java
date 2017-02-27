@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.logging.Level;
 
 import net.roboconf.agent.internal.Agent;
+import net.roboconf.messaging.api.MessagingConstants;
 
 /**
  * @author Vincent Zurczak - Linagora
@@ -71,9 +72,7 @@ public class AgentLauncher {
 		DebugUtils.updateLoggingConfiguration( Level.FINER );
 
 		this.agent = new Agent();
-		this.agent.setMessageServerIp( "localhost" );
-		this.agent.setMessageServerUsername( "guest" );
-		this.agent.setMessageServerPassword( "guest" );
+		this.agent.setMessagingType( MessagingConstants.FACTORY_TEST );
 		this.agent.setIpAddress( "127.0.0.1" );
 		this.agent.setApplicationName( APP_NAME );
 		this.agent.setScopedInstancePath( "/" + ROOT_INSTANCE_NAME );

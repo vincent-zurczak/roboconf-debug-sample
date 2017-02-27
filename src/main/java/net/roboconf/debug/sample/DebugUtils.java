@@ -25,11 +25,22 @@
 
 package net.roboconf.debug.sample;
 
+import java.util.Dictionary;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+
+import javax.servlet.Servlet;
+import javax.servlet.ServletException;
+
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
+import org.osgi.service.http.HttpContext;
+import org.osgi.service.http.HttpService;
+import org.osgi.service.http.NamespaceException;
 
 import net.roboconf.core.logging.RoboconfLogFormatter;
 
@@ -73,5 +84,67 @@ public class DebugUtils {
 				}
 			});
 		}
+	}
+
+
+	/**
+	 * Found at https://github.com/ow2-chameleon/fuchsia/master/testing/src/test/java/org/ow2/chameleon/fuchsia/testing/common/services/HttpServiceImpl.java
+	 * <p>
+	 * Completed from Jetty tutorials.
+	 * </p>
+	 */
+	public static class HttpServiceImpl implements HttpService {
+
+	    private final Server server;
+	    private final ServletContextHandler context;
+
+
+	    /**
+	     * Constructor.
+	     * @param port
+	     * @throws Exception
+	     */
+	    public HttpServiceImpl( int port ) throws Exception {
+	        this.server = new Server( port );
+
+	        this.context = new ServletContextHandler( ServletContextHandler.SESSIONS );
+	        this.context.setContextPath( "/" );
+	        this.server.setHandler( this.context );
+
+	    }
+
+
+	    @Override
+		public void registerServlet( String context, Servlet servlet, Dictionary dictionary, HttpContext httpContext )
+	    throws ServletException, NamespaceException {
+
+	    	if( ! context.endsWith( "/*" ))
+	    		context += "/*";
+
+	        ServletHolder servletHolder = new ServletHolder( servlet );
+	        servletHolder.setName((String) dictionary.get( "servlet-name" ));
+
+	        this.context.addServlet( servletHolder, context );
+	        System.out.println( "New servlet reachable at " + context );
+	    }
+
+	    @Override
+		public void registerResources(String s, String s2, HttpContext httpContext) throws NamespaceException {
+	        throw new UnsupportedOperationException( "Resource registering is not allowed in the mock implementation of httpservice" );
+	    }
+
+	    @Override
+		public void unregister(String s) {
+	    	// nothing
+	    }
+
+	    @Override
+		public HttpContext createDefaultHttpContext() {
+	        return null;
+	    }
+
+	    public Server getServer() {
+	        return this.server;
+	    }
 	}
 }
